@@ -1,0 +1,136 @@
+Objectif :
+Génère un projet complet appelé **Monde Délice** — plateforme web pour présenter des gâteaux/événements (front + back + admin) avec les exigences suivantes.
+
+Stack technique :
+
+* Frontend : **Next.js + TypeScript**, TailwindCSS, Framer Motion (animations subtiles), React Hook Form (si besoin).
+* Backend : **Express + TypeScript** (API REST), CORS sécurisé.
+* DB : **MongoDB** (Mongoose).
+* Hébergement ciblé : front sur Vercel, back sur Render/Heroku (instructions de déploiement).
+* Outils dev : ESLint, Prettier, TypeScript strict, Husky (pre-commit), GitHub Actions CI (build & test).
+
+Design / UX :
+
+* Style : **principalement violet** (palette de violets harmonieux) — fond blanc **ou** fond noir selon mode (thème clair/sombre). **Pas de textes multicolores** : uniquement nuances de violet + blancs/noirs.
+* Look : simple, professionnel, animations et transitions subtiles (micro-interactions, hover, transitions sur cartes, loader doux). UX soignée, fluide, mobile-first.
+* Responsive : parfait jusqu’à mobile (tous composants responsives).
+
+Contenu public :
+
+* Page unique principale (landing / site complet en one-page ou pages séparées selon Next best-practice) :
+
+  * Hero, services (cartes pour chaque service/gâteau), réalisations / blog (grid), section contact (en bas — **pas de formulaire**).
+  * Chaque réalisation/blog a sa page de détail avec galerie, description, CTA **« Me contacter »**.
+* Section contact (dans le footer/fin de la page d’accueil) : liens vers **WhatsApp, Email, Telegram** (liens externes).
+* Boutons « Me contacter » partout ouvrent un **modal** (petit popup) qui propose un choix : WhatsApp / Email / Telegram → ouvre l’app ou le lien correspondant. **Ne redirige pas vers la section contact.**
+
+Images :
+
+* L’ajout d’images se fait par sélection depuis la **galerie locale** (ou upload via navigateur).
+* Lors d’un upload, l’URL finale (transformée si besoin) est retournée par le backend et **stockée dans MongoDB** (champ `imageUrl`). (Option : intégration Cloudinary — laisser en option avec config `.env`).
+* Fournir utilitaires pour redimensionnement/minification côté serveur (sharp) avant stockage si demandé.
+
+Commentaires :
+
+* Les utilisateurs peuvent laisser des **commentaires** sur chaque événement/blog.
+* Modération : possibilité pour l’admin de supprimer/éditer les commentaires depuis la page admin.
+
+Sécurité & admin (exigence centrale) :
+
+* **Aucun** login/public sign-in classique. On crée un système sécurisé en 2 étapes :
+
+  1. **Accès page admin** : page `/admin` protégée par une **modale de mot de passe** (pas d’utilisateur public). Quand l’utilisateur (toi) saisit le mot de passe, le frontend appelle `POST /api/admin/validate` (body: `{ password }`). Le backend **vérifie** le mot de passe par rapport à `process.env.ADMIN_PASSWORD` (server-only). Si valide, le backend renvoie un **token temporaillé JWT court (ex : 1h)** signé avec `process.env.ADMIN_SIGN_SECRET`. Ce token est stocké côté client en `localStorage` et utilisé pour autoriser l’accès à l’UI admin (et pour autoriser API admin). Ainsi le mot de passe **n’est pas exposé** dans le build frontend.
+  2. **Protection des routes admin** : toutes les routes sensibles (`/api/admin/*`, `/api/products` en mode création/modif/suppression, `/api/events` en CRUD, `/api/comments/delete`, etc.) exigent un header `Authorization: Bearer <JWT>` et un middleware serveur `verifyAdminToken` qui valide le JWT et vérifie la durée. Le backend garde aussi `process.env.ADMIN_ALLOWED_IPS` (optionnel) pour renforcer la restriction.
+* **Rotation des clés** : documenter comment changer `ADMIN_PASSWORD` et `ADMIN_SIGN_SECRET`.
+* **Logging** : journaliser tentatives d’accès échouées et notifier (optionnel).
+
+Fonctionnalités admin :
+
+* **Dashboard** : stats clefs (nombre de visites/pages vues venant de Google Analytics + session replay Hotjar intégrés via dashboard iframe / badges) et métriques internes (nbre de blogs, commentaires, demandes de contact cliquées).
+* **CRUD** complet pour Services, Blogs / Réalisations, Images (liaison galerie), et Commentaires (modération).
+* **Feature « Favoris »** : dans l’admin, bouton pour marquer un blog/réalisation comme `featured`. Les items `featured` apparaissent en premier sur la page d’accueil.
+* Upload d’images depuis galerie : uploader -> backend renvoie URL -> enregistrer dans MongoDB `images` collection -> lien sélectionnable quand on crée/édite un blog/service.
+* Page admin simple mais pro, sections claires, recherche et filtres (par date, favori, service type), pagination, confirmations modales pour suppression.
+
+APIs & DB schema (exemples à générer) :
+
+* Collections MongoDB : `users` (optionnel pour admins), `products` (services), `blogs` (événements / réalisations), `comments`, `images`, `settings`.
+* Schéma `blogs` : `{ _id, title, slug, excerpt, content, images: [imageUrl], featured: boolean, createdAt, updatedAt, tags: [], meta: { author, eventDate } }`
+* Schéma `products` : `{ _id, name, price, description, images: [], categories: [], createdAt }`
+* Schéma `comments` : `{ _id, blogId, name, content, createdAt, approved: boolean }`
+* Endpoints REST clairs (GET public / POST/PUT/DELETE admin protégés).
+
+Expérience & micro-interactions à coder :
+
+* Transitions entre pages avec Framer Motion (fade/slide subtle).
+* Hover micro-animations sur cartes (élévation douce, border gradient violet).
+* Lazy-loading images, skeleton loaders pour list, smooth scroll for anchor.
+* Modal contact animé, accessible (focus trap, close with ESC).
+* Lightbox pour galerie avec swipe mobile.
+
+SEO, accessibilité et performance :
+
+* Meta tags SEO pour pages publiques, open graph images.
+* SSR/SSG pour pages publiques pertinentes (blogs/details) pour SEO.
+* Lighthouse-friendly, images optimisées, code-splitting.
+
+Integrations et analytics :
+
+* Google Analytics (code à ajouter via env `GA_TRACKING_ID`), instructions d’activation.
+* Hotjar (snippet via env `HOTJAR_ID`), expliquer dans README où coller les IDs.
+* Option: Netlify/Vercel environment variables docs.
+
+Environnement & variables `.env` (exemples à inclure dans README et `.env.example`) :
+
+```
+MONGO_URI=...
+PORT=5000
+
+# Admin security
+ADMIN_PASSWORD=unMotDePasseTrèsFort
+ADMIN_SIGN_SECRET=unSecretPourSignerJWTs
+ADMIN_TOKEN_TTL=3600 # secondes
+
+# Cloudinary (optionnel)
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+
+# Analytics
+GA_TRACKING_ID=
+HOTJAR_ID=
+```
+
+Livrables attendus (préciser dans Cursor) :
+
+1. Repo monorepo ou deux repos (frontend / backend) — fournir les deux structures et scripts `yarn dev`, `yarn build`, `yarn start`.
+2. Fichiers principaux générés : composants Next (Home, ServiceCard, BlogList, BlogDetail, AdminGate modal), pages Next (index, /blog/[slug], /admin), API client utils, Tailwind config, theme violet.
+3. Backend : serveur Express TS, routes, controllers, Mongoose models, middleware `verifyAdminToken`, endpoint `/api/admin/validate` qui retourne JWT.
+4. Exemple d’implémentation upload d’image (endpoint `/api/images/upload`) qui accepte un fichier (multer) → optimisation (sharp) → upload (Cloudinary ou stockage local) → renvoie URL et enregistre `images` doc.
+5. README clair : installation, setup `.env`, seed DB, lancer dev (frontend & backend), déploiement sur Vercel + Render, comment mettre les keys GA/Hotjar, comment changer mot de passe admin.
+6. Tests unitaires basiques (jest) pour les controllers critiques (auth admin token verify).
+7. CI GitHub Actions pipeline (install, build, test).
+8. Optional : script de migration/seed pour ajouter exemples de services et blogs, et images de démo.
+
+Contraintes UX / UI additionnelles (à respecter fort) :
+
+* Palette violet-only (définir tokens Tailwind : `--violet-50`, `--violet-100`, `--violet-500`, `--violet-900`) + blanc/noir.
+* Pas de couleurs supplémentaires pour textes, liens, boutons : tout en violet, nuances autorisées.
+* Boutons call-to-action violets, états hover et active subtils.
+* Aucun formulaire de contact (uniquement modal links). Le formulaire de commentaire (public) reste simple et apparent sous chaque blog.
+* Ne pas exposer `ADMIN_PASSWORD` dans le bundle client. L’endpoint `/api/admin/validate` doit vérifier côté serveur.
+* Page `/admin` n’apparaît nulle part dans le site (pas de footer link). URL discrète (ex : `/admin-ml2025`) — configurable.
+
+Extras utiles à générer :
+
+* Composant `FeaturedCarousel` pour la home qui montre blogs favoris.
+* Prévisualisation d’images avant upload et cropping minimal.
+* Notifications toast pour actions (success / error).
+* Système de confirmation (modal) avant suppression.
+
+Livraison Cursor :
+
+* Générer tous les fichiers nécessaires avec code TypeScript fonctionnel (front + back).
+* Penser aux bonnes pratiques de sécurité, gestion d’erreurs, validation d’input (zod/yup) côté backend.
+* Fournir un message finale listant les commandes exactes pour lancer en local (dev front/back), et pour déployer.
+
