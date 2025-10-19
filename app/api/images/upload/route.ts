@@ -58,7 +58,13 @@ export async function POST(request: NextRequest) {
     const uploadFormData = new FormData();
     uploadFormData.append('files', file);
     
-    const uploadResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || '/api'}/uploadthing`, {
+    // Construire l'URL complète pour UploadThing
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
+    const uploadUrl = baseUrl.startsWith('http') 
+      ? `${baseUrl}/uploadthing` 
+      : `https://monde-delice-7nj9.vercel.app${baseUrl}/uploadthing`;
+    
+    const uploadResponse = await fetch(uploadUrl, {
       method: 'POST',
       headers: {
         'Authorization': authHeader,
