@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Image from '@/lib/models/Image';
 import { verifyAdminToken } from '@/lib/auth';
+import { utapi } from 'uploadthing/server';
 
-// POST /api/images/upload - Upload d'image via UploadThing
+// POST /api/images/upload - Upload d'image via UploadThing SDK
 export async function POST(request: NextRequest) {
   try {
     // Vérifier l'authentification admin
@@ -24,8 +25,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Connexion à MongoDB
     await connectDB();
 
+    // Récupérer le fichier depuis FormData
     const formData = await request.formData();
     const file = formData.get('image') as File;
 
@@ -54,34 +57,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Upload via UploadThing - Utiliser l'API UploadThing directement
-    const uploadFormData = new FormData();
-    uploadFormData.append('files', file);
+    // Upload via UploadThing SDK (méthode officielle)
+    console.log('🚀 Upload d\'image via UploadThing SDK:', file.name, file.size, file.type);
     
-    // Construire l'URL complète
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
-    const uploadUrl = baseUrl.startsWith('http') 
-      ? `${baseUrl}/uploadthing` 
-      : `https://monde-delice.vercel.app${baseUrl}/uploadthing`;
+    const uploadResult = await utapi.uploadFiles(file);
     
-    const uploadResponse = await fetch(uploadUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': authHeader,
-      },
-      body: uploadFormData
-    });
-
-    if (!uploadResponse.ok) {
-      const errorText = await uploadResponse.text();
-      console.error('Erreur UploadThing:', errorText);
-      throw new Error('Erreur lors de l\'upload UploadThing');
+    if (!uploadResult.data) {
+      console.error('❌ Erreur UploadThing:', uploadResult.error);
+      throw new Error('Erreur lors de l\'upload UploadThing: ' + uploadResult.error?.message);
     }
 
-    const uploadResult = await uploadResponse.json();
-    const uploadedFile = uploadResult[0];
+    const uploadedFile = uploadResult.data;
 
-    // Sauvegarder les métadonnées en base
+    // Sauvegarder les métadonnées en base MongoDB
     const imageDoc = new Image({
       filename: uploadedFile.name,
       originalName: file.name,
@@ -92,6 +80,8 @@ export async function POST(request: NextRequest) {
     });
 
     await imageDoc.save();
+
+    console.log('✅ Image uploadée et sauvegardée:', uploadedFile.url);
 
     return NextResponse.json({
       success: true,
@@ -106,9 +96,12 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Erreur POST /api/images/upload:', error);
+    console.error('❌ Erreur POST /api/images/upload:', error);
     return NextResponse.json(
-      { success: false, message: 'Erreur serveur' },
+      { 
+        success: false, 
+        message: error instanceof Error ? error.message : 'Erreur serveur' 
+      },
       { status: 500 }
     );
   }
