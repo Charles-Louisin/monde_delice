@@ -58,11 +58,11 @@ export async function POST(request: NextRequest) {
     const uploadFormData = new FormData();
     uploadFormData.append('files', file);
     
-    // Construire l'URL complète pour UploadThing
+    // Construire l'URL complète
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
     const uploadUrl = baseUrl.startsWith('http') 
       ? `${baseUrl}/uploadthing` 
-      : `https://monde-delice-7nj9.vercel.app${baseUrl}/uploadthing`;
+      : `https://monde-delice.vercel.app${baseUrl}/uploadthing`;
     
     const uploadResponse = await fetch(uploadUrl, {
       method: 'POST',
