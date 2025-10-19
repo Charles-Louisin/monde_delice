@@ -90,7 +90,7 @@ export async function PUT(
 
     // Convertir eventDate en Date si fournie
     if (validatedData.meta?.eventDate) {
-      (validatedData.meta as any).eventDate = new Date(validatedData.meta.eventDate);
+      (validatedData.meta as { eventDate: string | Date }).eventDate = new Date(validatedData.meta.eventDate);
     }
 
     Object.assign(blog, validatedData);

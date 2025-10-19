@@ -14,13 +14,13 @@ const createProductSchema = z.object({
 });
 
 // Schéma de validation pour la mise à jour de produit
-const updateProductSchema = z.object({
-  name: z.string().min(2).max(100).optional(),
-  price: z.number().min(0).max(10000).optional(),
-  description: z.string().min(10).max(1000).optional(),
-  images: z.array(z.string().url()).optional(),
-  categories: z.array(z.string()).optional()
-});
+// const updateProductSchema = z.object({
+//   name: z.string().min(2).max(100).optional(),
+//   price: z.number().min(0).max(10000).optional(),
+//   description: z.string().min(10).max(1000).optional(),
+//   images: z.array(z.string().url()).optional(),
+//   categories: z.array(z.string()).optional()
+// });
 
 // GET /api/products - Récupérer tous les produits
 export async function GET(request: NextRequest) {
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || '';
     const category = searchParams.get('category') || '';
-    const featured = searchParams.get('featured') === 'true';
+    // const featured = searchParams.get('featured') === 'true';
 
     const query: Record<string, unknown> = {};
 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, User, Heart, ArrowLeft, Share2, Star } from 'lucide-react';
+import { Calendar, User, ArrowLeft, Star } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import Header from '../../components/Header';
