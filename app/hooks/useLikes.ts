@@ -49,8 +49,8 @@ export const useLikes = (): UseLikesReturn => {
 
     setIsLoading(true);
     try {
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-      const response = await fetch(`${backendUrl}/likes/toggle`, {
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
+      const response = await fetch(`${backendUrl}/blogs/${blogId}/like`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -125,8 +125,8 @@ export const useLikes = (): UseLikesReturn => {
   // Fonction pour récupérer le statut de like
   const getLikeStatus = useCallback(async (blogId: string): Promise<LikeData | null> => {
     try {
-      const backendUrl = 'http://localhost:5000/api';
-      const response = await fetch(`${backendUrl}/likes/status/${blogId}`);
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
+      const response = await fetch(`${backendUrl}/blogs/${blogId}/like-status`);
       
       if (!response.ok) {
         console.warn('API de statut des likes non disponible, utilisation du mode local');

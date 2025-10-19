@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { validateAdminPassword, generateAdminToken } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,19 +12,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Vérifier le mot de passe (dans un vrai projet, vous feriez un appel au backend)
-    const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
-    
-    if (password !== adminPassword) {
+    // Vérifier le mot de passe
+    if (!validateAdminPassword(password)) {
       return NextResponse.json(
         { success: false, message: 'Mot de passe incorrect' },
         { status: 401 }
       );
     }
 
-    // Simuler la génération d'un token JWT
-    const token = 'mock-jwt-token-' + Date.now();
-    const expiresIn = '1h';
+    // Générer un token JWT
+    const token = generateAdminToken();
+    const expiresIn = '24h';
 
     return NextResponse.json({
       success: true,

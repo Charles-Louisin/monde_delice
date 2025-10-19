@@ -12,13 +12,13 @@ const nextConfig: NextConfig = {
       {
         protocol: 'http',
         hostname: 'localhost',
-        port: '5000',
+        port: '3000',
         pathname: '/uploads/**',
       },
       {
         protocol: 'https',
         hostname: 'localhost',
-        port: '5000',
+        port: '3000',
         pathname: '/uploads/**',
       },
       // Ajouter d'autres domaines d'images si nécessaire
