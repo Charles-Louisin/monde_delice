@@ -55,15 +55,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Upload via UploadThing - Utiliser l'API UploadThing directement
-    const formData = new FormData();
-    formData.append('files', file);
+    const uploadFormData = new FormData();
+    uploadFormData.append('files', file);
     
     const uploadResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || '/api'}/uploadthing`, {
       method: 'POST',
       headers: {
         'Authorization': authHeader,
       },
-      body: formData
+      body: uploadFormData
     });
 
     if (!uploadResponse.ok) {
