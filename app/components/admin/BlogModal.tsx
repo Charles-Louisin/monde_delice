@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Calendar } from 'lucide-react';
 import { Blog } from '../../lib/api';
-import ImageUpload from './ImageUpload';
+import ImageUpload from '../ImageUpload';
 
 interface BlogModalProps {
   isOpen: boolean;
