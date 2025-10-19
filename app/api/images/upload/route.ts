@@ -2,9 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Image from '@/lib/models/Image';
 import { verifyAdminToken } from '@/lib/auth';
-import { utapi } from 'uploadthing/server';
 
-// POST /api/images/upload - Upload d'image via UploadThing SDK
+// POST /api/images/upload - Upload d'image via UploadThing
 export async function POST(request: NextRequest) {
   try {
     // Vérifier l'authentification admin
@@ -25,10 +24,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Connexion à MongoDB
     await connectDB();
 
-    // Récupérer le fichier depuis FormData
     const formData = await request.formData();
     const file = formData.get('image') as File;
 
@@ -57,19 +54,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Upload via UploadThing SDK (méthode officielle)
-    console.log('🚀 Upload d\'image via UploadThing SDK:', file.name, file.size, file.type);
+    // Upload via UploadThing - Utiliser l'API UploadThing directement
+    const uploadFormData = new FormData();
+    uploadFormData.append('files', file);
     
-    const uploadResult = await utapi.uploadFiles(file);
-    
-    if (!uploadResult.data) {
-      console.error('❌ Erreur UploadThing:', uploadResult.error);
-      throw new Error('Erreur lors de l\'upload UploadThing: ' + uploadResult.error?.message);
+    const uploadResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || '/api'}/uploadthing`, {
+      method: 'POST',
+      headers: {
+        'Authorization': authHeader,
+      },
+      body: uploadFormData
+    });
+
+    if (!uploadResponse.ok) {
+      const errorText = await uploadResponse.text();
+      console.error('Erreur UploadThing:', errorText);
+      throw new Error('Erreur lors de l\'upload UploadThing');
     }
 
-    const uploadedFile = uploadResult.data;
+    const uploadResult = await uploadResponse.json();
+    const uploadedFile = uploadResult[0];
 
-    // Sauvegarder les métadonnées en base MongoDB
+    // Sauvegarder les métadonnées en base
     const imageDoc = new Image({
       filename: uploadedFile.name,
       originalName: file.name,
@@ -80,8 +86,6 @@ export async function POST(request: NextRequest) {
     });
 
     await imageDoc.save();
-
-    console.log('✅ Image uploadée et sauvegardée:', uploadedFile.url);
 
     return NextResponse.json({
       success: true,
@@ -96,12 +100,9 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ Erreur POST /api/images/upload:', error);
+    console.error('Erreur POST /api/images/upload:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        message: error instanceof Error ? error.message : 'Erreur serveur' 
-      },
+      { success: false, message: 'Erreur serveur' },
       { status: 500 }
     );
   }
