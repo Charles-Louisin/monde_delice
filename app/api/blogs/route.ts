@@ -108,8 +108,8 @@ export async function POST(request: NextRequest) {
 
     // Convertir eventDate en Date si fournie
     if (validatedData.meta.eventDate) {
-      (validatedData.meta as { eventDate: string | Date }).eventDate = new Date(validatedData.meta.eventDate);
-    }
+
+(validatedData.meta as { eventDate: string | Date }).eventDate = new Date(validatedData.meta.eventDate);    }
 
     const blog = new Blog(validatedData);
     await blog.save();
