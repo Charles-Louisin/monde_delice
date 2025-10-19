@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
 interface ApiResponse<T> {
   success: boolean;
@@ -169,7 +169,7 @@ export const adminApi = {
 export const authApi = {
   // Valider le mot de passe admin
   validate: async (password: string) => {
-    return apiCall<{ token: string; expiresAt: Date }>('/auth/validate', {
+    return apiCall<{ token: string; expiresAt: Date }>('/admin/validate', {
       method: 'POST',
       body: JSON.stringify({ password }),
     });
