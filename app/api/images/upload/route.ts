@@ -2,11 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Image from '@/lib/models/Image';
 import { verifyAdminToken } from '@/lib/auth';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
-import { v4 as uuidv4 } from 'uuid';
 
-// POST /api/images/upload - Upload d'image
+// POST /api/images/upload - Upload d'image via UploadThing
 export async function POST(request: NextRequest) {
   try {
     // Vérifier l'authentification admin
@@ -48,37 +45,44 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Vérifier la taille (max 5MB)
-    const maxSize = 5 * 1024 * 1024; // 5MB
+    // Vérifier la taille (max 4MB pour UploadThing)
+    const maxSize = 4 * 1024 * 1024; // 4MB
     if (file.size > maxSize) {
       return NextResponse.json(
-        { success: false, message: 'Fichier trop volumineux (max 5MB)' },
+        { success: false, message: 'Fichier trop volumineux (max 4MB)' },
         { status: 400 }
       );
     }
 
-    // Générer un nom de fichier unique
-    const fileExtension = file.name.split('.').pop();
-    const filename = `${uuidv4()}.${fileExtension}`;
-    
-    // Créer le dossier uploads s'il n'existe pas
-    const uploadsDir = join(process.cwd(), 'public', 'uploads');
-    await mkdir(uploadsDir, { recursive: true });
+    // Upload via UploadThing
+    const uploadResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || '/api'}/uploadthing`, {
+      method: 'POST',
+      headers: {
+        'Authorization': authHeader,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        files: [{
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          data: await file.arrayBuffer()
+        }]
+      })
+    });
 
-    // Sauvegarder le fichier
-    const filePath = join(uploadsDir, filename);
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    await writeFile(filePath, buffer);
+    if (!uploadResponse.ok) {
+      throw new Error('Erreur lors de l\'upload UploadThing');
+    }
 
-    // Créer l'URL publique
-    const url = `/uploads/${filename}`;
+    const uploadResult = await uploadResponse.json();
+    const uploadedFile = uploadResult[0];
 
     // Sauvegarder les métadonnées en base
     const imageDoc = new Image({
-      filename,
+      filename: uploadedFile.name,
       originalName: file.name,
-      url,
+      url: uploadedFile.url,
       size: file.size,
       mimetype: file.type,
       uploadedBy: 'admin'
@@ -89,8 +93,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: {
-        url,
-        filename,
+        url: uploadedFile.url,
+        filename: uploadedFile.name,
         originalName: file.name,
         size: file.size,
         mimetype: file.type
