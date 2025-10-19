@@ -54,24 +54,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Upload via UploadThing
+    // Upload via UploadThing - Utiliser l'API UploadThing directement
+    const formData = new FormData();
+    formData.append('files', file);
+    
     const uploadResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || '/api'}/uploadthing`, {
       method: 'POST',
       headers: {
         'Authorization': authHeader,
-        'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        files: [{
-          name: file.name,
-          type: file.type,
-          size: file.size,
-          data: await file.arrayBuffer()
-        }]
-      })
+      body: formData
     });
 
     if (!uploadResponse.ok) {
+      const errorText = await uploadResponse.text();
+      console.error('Erreur UploadThing:', errorText);
       throw new Error('Erreur lors de l\'upload UploadThing');
     }
 
