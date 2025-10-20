@@ -8,6 +8,7 @@ import Footer from '../components/Footer';
 import ContactModal from '../components/ContactModal';
 import { useProducts } from '../lib/hooks/useAdminData';
 import Image from 'next/image';
+import OptimizedImage from '@/components/OptimizedImage';
 
 export default function ServicesPage() {
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
@@ -127,10 +128,11 @@ export default function ServicesPage() {
                 >
                   <div className="relative h-48 bg-gradient-to-br from-violet-100 to-violet-200 flex items-center justify-center">
                       {service.images && service.images.length > 0 ? (
-                        <Image
+                        <OptimizedImage
                           src={service.images[0]}
                           alt={service.name}
                           fill
+                          priority={index < 3}
                           className="object-cover"
                         />
                       ) : (

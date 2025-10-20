@@ -7,8 +7,8 @@ import { z } from 'zod';
 // Schéma de validation pour la création de produit
 const createProductSchema = z.object({
   name: z.string().min(2).max(100),
-  price: z.number().min(0).max(10000),
-  description: z.string().min(10).max(1000),
+  price: z.number().min(0).max(100000),
+  description: z.string().min(1).max(1000),
   images: z.array(z.string().url()).min(1),
   categories: z.array(z.string()).min(1)
 });
@@ -102,14 +102,41 @@ export async function POST(request: NextRequest) {
     console.error('Erreur POST /api/products:', error);
     
     if (error instanceof z.ZodError) {
+      const errorMessages = error.issues.map(issue => {
+        const field = issue.path.join('.');
+        return `${field}: ${issue.message}`;
+      });
+      
       return NextResponse.json(
-        { success: false, message: 'Données invalides', errors: error.issues },
+        { 
+          success: false, 
+          message: 'Données invalides', 
+          errors: errorMessages 
+        },
+        { status: 400 }
+      );
+    }
+
+    // Gestion des erreurs Mongoose
+    if (error && typeof error === 'object' && 'name' in error && error.name === 'ValidationError') {
+      const mongooseError = error as unknown as { errors: Record<string, { message: string }> };
+      const errorMessages = Object.values(mongooseError.errors).map((err) => err.message);
+      
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: 'Erreur de validation', 
+          errors: errorMessages 
+        },
         { status: 400 }
       );
     }
 
     return NextResponse.json(
-      { success: false, message: 'Erreur serveur' },
+      { 
+        success: false, 
+        message: error instanceof Error ? error.message : 'Erreur serveur' 
+      },
       { status: 500 }
     );
   }

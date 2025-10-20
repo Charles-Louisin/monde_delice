@@ -2,6 +2,10 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
+    // Augmenter le timeout pour les images externes
+    dangerouslyAllowSVG: true,
+    contentDispositionType: 'attachment',
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     remotePatterns: [
       {
         protocol: 'https',
@@ -31,6 +35,18 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'picsum.photos',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'utfs.io',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'uploadthing.com',
         port: '',
         pathname: '/**',
       }

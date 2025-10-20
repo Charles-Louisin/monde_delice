@@ -11,6 +11,7 @@ import ContactModal from '../../components/ContactModal';
 import LikeButton from '../../components/LikeButton';
 import { blogApi, Blog } from '../../lib/api';
 import Image from 'next/image';
+import OptimizedImage from '@/components/OptimizedImage';
 
 export default function BlogDetailPage() {
   const [blog, setBlog] = useState<Blog | null>(null);
@@ -222,6 +223,7 @@ export default function BlogDetailPage() {
                   src={blog.images[0]}
                   alt={blog.title}
                   fill
+                  priority
                   className="object-cover"
                 />
               </div>
@@ -267,11 +269,12 @@ export default function BlogDetailPage() {
                       transition={{ delay: 0.4 + index * 0.1 }}
                       className="relative h-48 rounded-lg overflow-hidden group cursor-pointer"
                     >
-                      <Image
+                      <OptimizedImage
                         src={image}
                         alt={`${blog.title} - Image ${index + 2}`}
                         fill
                         className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                       />
                     </motion.div>
                   ))}

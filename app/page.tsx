@@ -10,6 +10,7 @@ import ContactModal from './components/ContactModal';
 import LikeButton from './components/LikeButton';
 import { useFeaturedServices, useFeaturedBlogs } from './lib/hooks/useHomeData';
 import Image from 'next/image';
+import OptimizedImage from '@/components/OptimizedImage';
 
 export default function Home() {
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
@@ -152,11 +153,12 @@ export default function Home() {
                 >
                   <div className="relative h-48 bg-gradient-to-br from-violet-100 to-violet-200 flex items-center justify-center">
                     {service.images && service.images.length > 0 ? (
-                      <Image
+                      <OptimizedImage
                         src={service.images[0]}
                         alt={service.name}
                         fill
                         className="object-cover"
+                        priority={index < 3}
                       />
                     ) : (
                       <div className="text-6xl">🎂</div>
@@ -270,10 +272,11 @@ export default function Home() {
                   <Link href={`/blogs/${blog.slug}`} className="block">
                     <div className="relative h-48 bg-gradient-to-br from-violet-100 to-violet-200 flex items-center justify-center">
                       {blog.images && blog.images.length > 0 ? (
-                        <Image
+                        <OptimizedImage
                           src={blog.images[0]}
                           alt={blog.title}
                           fill
+                          priority={index < 2}
                           className="object-cover"
                         />
                       ) : (

@@ -22,20 +22,23 @@ const ProductSchema = new Schema<IProduct>({
     type: Number,
     required: [true, 'Le prix est requis'],
     min: [0, 'Le prix ne peut pas être négatif'],
-    max: [10000, 'Le prix ne peut pas dépasser 10000€'],
+    max: [100000, 'Le prix ne peut pas dépasser 100000€'],
   },
   description: {
     type: String,
     required: [true, 'La description est requise'],
     trim: true,
     maxlength: [1000, 'La description ne peut pas dépasser 1000 caractères'],
-    minlength: [10, 'La description doit contenir au moins 10 caractères'],
+    minlength: [1, 'La description est requise'],
   },
   images: [{
     type: String,
     validate: {
       validator: function(v: string) {
-        return /^https?:\/\/.+\.(jpg|jpeg|png|webp|gif)$/i.test(v);
+        // Accepter les URLs UploadThing (utfs.io) et les URLs d'images classiques
+        return /^https?:\/\/.+\.(jpg|jpeg|png|webp|gif|svg)(\?.*)?$/i.test(v) || 
+               /^https?:\/\/.*uploadthing\.com.*$/i.test(v) ||
+               /^https?:\/\/.*utfs\.io.*$/i.test(v);
       },
       message: 'URL d\'image invalide'
     }

@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Search, Calendar, Star } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import OptimizedImage from '@/components/OptimizedImage';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import ContactModal from '../components/ContactModal';
@@ -178,10 +179,11 @@ export default function BlogsPage() {
                     <Link href={`/blogs/${blog.slug}`}>
                       <div className="relative h-48 bg-gradient-to-br from-violet-100 to-violet-200 flex items-center justify-center">
                         {blog.images && blog.images.length > 0 ? (
-                          <Image
+                          <OptimizedImage
                             src={blog.images[0]}
                             alt={blog.title}
                             fill
+                            priority={index < 3}
                             className="object-cover"
                           />
                         ) : (

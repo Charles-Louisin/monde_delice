@@ -1,8 +1,9 @@
 "use client";
 
 import { UploadButton } from "@uploadthing/react";
-import { ourFileRouter } from "@/lib/uploadthing";
+import { ourFileRouter, type OurFileRouter } from "@/lib/uploadthing";
 import { useState } from "react";
+import OptimizedImage from "./OptimizedImage";
 
 type ImageUploadProps = {
   images?: string[];
@@ -28,7 +29,7 @@ export default function ImageUpload({
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  const handleUploadComplete = (res: any) => {
+  const handleUploadComplete = (res: { url: string; name: string; size: number; type: string }[] | undefined) => {
     setIsUploading(false);
     
     if (res && res[0]) {
@@ -84,7 +85,7 @@ export default function ImageUpload({
   };
 
   // Fonction pour sauvegarder l'image en base de données
-  const saveImageToDatabase = async (url: string, fileData: any) => {
+  const saveImageToDatabase = async (url: string, fileData: { name: string; size: number; type: string }) => {
     try {
       const response = await fetch('/api/images/save', {
         method: 'POST',
@@ -121,7 +122,7 @@ export default function ImageUpload({
       </div>
 
       <div className="relative">
-        <UploadButton
+        <UploadButton<OurFileRouter, "imageUploader">
           endpoint="imageUploader"
           onClientUploadComplete={handleUploadComplete}
           onUploadError={handleUploadError}
@@ -193,14 +194,16 @@ export default function ImageUpload({
             Images sélectionnées ({images.length}/{maxImages})
           </h4>
           
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {images.map((image, index) => (
               <div key={index} className="relative group">
-                <div className="aspect-square rounded-lg overflow-hidden bg-gray-100">
-                  <img
+                <div className="w-32 h-32 rounded-lg overflow-hidden bg-gray-100">
+                  <OptimizedImage
                     src={image}
                     alt={`Upload ${index + 1}`}
-                    className="w-full h-full object-cover"
+                    fill
+                    className="object-cover rounded-lg"
+                    sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
                   />
                 </div>
                 

@@ -50,7 +50,10 @@ const BlogSchema = new Schema<IBlog>({
     type: String,
     validate: {
       validator: function(v: string) {
-        return /^https?:\/\/.+\.(jpg|jpeg|png|webp|gif)$/i.test(v);
+        // Accepter les URLs UploadThing (utfs.io) et les URLs d'images classiques
+        return /^https?:\/\/.+\.(jpg|jpeg|png|webp|gif|svg)(\?.*)?$/i.test(v) || 
+               /^https?:\/\/.*uploadthing\.com.*$/i.test(v) ||
+               /^https?:\/\/.*utfs\.io.*$/i.test(v);
       },
       message: 'URL d\'image invalide'
     }
