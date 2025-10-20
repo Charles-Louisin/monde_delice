@@ -21,7 +21,7 @@ export default function TestUploadPage() {
       <div className="max-w-2xl mx-auto px-4">
         <div className="bg-white rounded-lg shadow-md p-6">
           <h1 className="text-2xl font-bold text-gray-900 mb-6">
-            Test d'Upload d'Images
+            Test d&apos;Upload d&apos;Images
           </h1>
           
           <ImageUpload
