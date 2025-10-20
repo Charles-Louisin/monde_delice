@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface OptimizedImageProps {
   src: string;
@@ -26,66 +26,79 @@ export default function OptimizedImage({
 }: OptimizedImageProps) {
   const [imageSrc, setImageSrc] = useState(src);
   const [hasError, setHasError] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [retryCount, setRetryCount] = useState(0);
+  const [isRetrying, setIsRetrying] = useState(false);
+  const retryCountRef = useRef(0);
+  const retryTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const maxRetries = 5;
+  const retryDelays = [1000, 2000, 5000, 10000, 30000]; // Délais progressifs
 
   const handleError = () => {
-    // Pour les URLs UploadThing, retry automatique
-    if (src.includes('utfs.io') || src.includes('uploadthing.com')) {
-      if (retryCount < 3) {
-        // Retry jusqu'à 3 fois avec délai croissant
-        const delay = (retryCount + 1) * 2000; // 2s, 4s, 6s
-        setTimeout(() => {
-          setRetryCount(prev => prev + 1);
-          setImageSrc(src + '?retry=' + (retryCount + 1)); // Forcer le rechargement
-          setIsLoading(true);
-          setHasError(false);
-        }, delay);
-      } else {
-        // Après 3 tentatives, afficher l'erreur
-        setHasError(true);
-        setIsLoading(false);
-        setImageSrc('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5YTNhZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIG5vbiBjaGFyZ2VlPC90ZXh0Pjwvc3ZnPg==');
-      }
-    } else {
-      // Pour les autres images, erreur immédiate
+    if (!hasError) {
       setHasError(true);
-      setIsLoading(false);
+      // Fallback vers une image placeholder
       setImageSrc('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5YTNhZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIG5vbiBjaGFyZ2VlPC90ZXh0Pjwvc3ZnPg==');
+      
+      // Démarrer le retry en background
+      startRetry();
     }
   };
 
-  const handleLoad = () => {
-    setHasError(false);
-    setIsLoading(false);
+  const startRetry = () => {
+    if (retryCountRef.current >= maxRetries || isRetrying) {
+      return;
+    }
+
+    setIsRetrying(true);
+    const delay = retryDelays[Math.min(retryCountRef.current, retryDelays.length - 1)];
+    
+    retryTimeoutRef.current = setTimeout(() => {
+      retryCountRef.current++;
+      console.log(`🔄 Retry ${retryCountRef.current}/${maxRetries} pour l'image:`, src);
+      
+      // Essayer de recharger l'image originale
+      setImageSrc(src);
+      setIsRetrying(false);
+    }, delay);
   };
 
+  const handleLoad = () => {
+    if (hasError) {
+      console.log(`✅ Image chargée avec succès après ${retryCountRef.current} tentatives:`, src);
+    }
+    setHasError(false);
+    setIsRetrying(false);
+    retryCountRef.current = 0;
+    
+    // Annuler le retry en cours
+    if (retryTimeoutRef.current) {
+      clearTimeout(retryTimeoutRef.current);
+      retryTimeoutRef.current = null;
+    }
+  };
+
+  // Nettoyer les timeouts au démontage
+  useEffect(() => {
+    return () => {
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current);
+      }
+    };
+  }, []);
+
   return (
-    <div className="relative">
-      <Image
-        src={imageSrc}
-        alt={alt}
-        fill={fill}
-        width={width}
-        height={height}
-        className={className}
-        priority={priority}
-        sizes={sizes}
-        onError={handleError}
-        onLoad={handleLoad}
-        // Configuration pour les images externes
-        unoptimized={src.includes('utfs.io') || src.includes('uploadthing.com')}
-      />
-      {isLoading && !hasError && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-100 rounded-lg">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          {retryCount > 0 && (
-            <p className="text-xs text-gray-500 mt-2">
-              Tentative {retryCount + 1}/3...
-            </p>
-          )}
-        </div>
-      )}
-    </div>
+    <Image
+      src={imageSrc}
+      alt={alt}
+      fill={fill}
+      width={width}
+      height={height}
+      className={className}
+      priority={priority}
+      sizes={sizes}
+      onError={handleError}
+      onLoad={handleLoad}
+      // Configuration pour les images externes
+      unoptimized={src.includes('utfs.io') || src.includes('uploadthing.com')}
+    />
   );
 }
