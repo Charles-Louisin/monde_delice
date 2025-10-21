@@ -13,13 +13,18 @@ import {
   Star,
   Search,
   Menu,
-  X
+  X,
+  Grid3X3,
+  Maximize2,
+  X as XIcon
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAdminStats, useProducts, useBlogs } from '../../lib/hooks/useAdminData';
 import ServiceModal from '../../components/admin/ServiceModal';
 import BlogModal from '../../components/admin/BlogModal';
 import { Product, Blog } from '../../lib/api';
+import { useToast } from '../../components/Toast';
+import Toast from '../../components/Toast';
 
 export default function AdminDashboard() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -31,6 +36,10 @@ export default function AdminDashboard() {
   const [editingService, setEditingService] = useState<Product | null>(null);
   const [editingBlog, setEditingBlog] = useState<Blog | null>(null);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteItem, setDeleteItem] = useState<{ type: 'product' | 'blog', id: string, name: string } | null>(null);
+  const { toasts, success, error } = useToast();
   const router = useRouter();
 
   // Hooks pour les données
@@ -77,20 +86,43 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteProduct = async (id: string) => {
-    if (confirm('Êtes-vous sûr de vouloir supprimer ce service ?')) {
-      const result = await deleteProduct(id);
-      if (!result.success) {
-        alert('Erreur lors de la suppression: ' + result.error);
-      }
+    const product = products?.find(p => p._id === id);
+    if (product) {
+      setDeleteItem({ type: 'product', id, name: product.name });
+      setShowDeleteModal(true);
     }
   };
 
   const handleDeleteBlog = async (id: string) => {
-    if (confirm('Êtes-vous sûr de vouloir supprimer cette réalisation ?')) {
-      const result = await deleteBlog(id);
-      if (!result.success) {
-        alert('Erreur lors de la suppression: ' + result.error);
+    const blog = blogs?.find(b => b._id === id);
+    if (blog) {
+      setDeleteItem({ type: 'blog', id, name: blog.title });
+      setShowDeleteModal(true);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteItem) return;
+
+    try {
+      let result;
+      if (deleteItem.type === 'product') {
+        result = await deleteProduct(deleteItem.id);
+      } else {
+        result = await deleteBlog(deleteItem.id);
       }
+
+      if (result.success) {
+        success(`${deleteItem.type === 'product' ? 'Service' : 'Réalisation'} supprimé(e) avec succès`);
+      } else {
+        error(result.error || 'Erreur lors de la suppression');
+      }
+    } catch (err) {
+      console.error('Erreur lors de la suppression:', err);
+      error('Erreur lors de la suppression');
+    } finally {
+      setShowDeleteModal(false);
+      setDeleteItem(null);
     }
   };
 
@@ -105,10 +137,28 @@ export default function AdminDashboard() {
   };
 
   const handleSaveService = async (serviceData: Omit<Product, '_id' | 'createdAt' | 'updatedAt'>) => {
-    if (editingService) {
-      return await updateProduct(editingService._id, serviceData);
-    } else {
-      return await createProduct(serviceData);
+    try {
+      let result;
+      if (editingService) {
+        result = await updateProduct(editingService._id, serviceData);
+        if (result.success) {
+          success('Service modifié avec succès');
+        } else {
+          error(result.error || 'Erreur lors de la modification');
+        }
+      } else {
+        result = await createProduct(serviceData);
+        if (result.success) {
+          success('Service ajouté avec succès');
+        } else {
+          error(result.error || 'Erreur lors de l\'ajout');
+        }
+      }
+      return result;
+    } catch (err) {
+      console.error('Erreur lors de la sauvegarde:', err);
+      error('Erreur lors de la sauvegarde');
+      return { success: false, error: 'Erreur lors de la sauvegarde' };
     }
   };
 
@@ -133,10 +183,28 @@ export default function AdminDashboard() {
   };
 
   const handleSaveBlog = async (blogData: Omit<Blog, '_id' | 'createdAt' | 'updatedAt'>) => {
-    if (editingBlog) {
-      return await updateBlog(editingBlog._id, blogData);
-    } else {
-      return await createBlog(blogData);
+    try {
+      let result;
+      if (editingBlog) {
+        result = await updateBlog(editingBlog._id, blogData);
+        if (result.success) {
+          success('Réalisation modifiée avec succès');
+        } else {
+          error(result.error || 'Erreur lors de la modification');
+        }
+      } else {
+        result = await createBlog(blogData);
+        if (result.success) {
+          success('Réalisation ajoutée avec succès');
+        } else {
+          error(result.error || 'Erreur lors de l\'ajout');
+        }
+      }
+      return result;
+    } catch (err) {
+      console.error('Erreur lors de la sauvegarde:', err);
+      error('Erreur lors de la sauvegarde');
+      return { success: false, error: 'Erreur lors de la sauvegarde' };
     }
   };
 
@@ -186,7 +254,7 @@ export default function AdminDashboard() {
         {/* Overlay mobile */}
         {isMobileSidebarOpen && (
           <div 
-            className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+            className="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-sm z-40 lg:hidden"
             onClick={() => setIsMobileSidebarOpen(false)}
           />
         )}
@@ -203,7 +271,8 @@ export default function AdminDashboard() {
             {[
               { id: 'overview', label: 'Vue d\'ensemble', icon: BarChart3 },
               { id: 'products', label: 'Services', icon: FileText },
-              { id: 'blogs', label: 'Réalisations', icon: Image }
+              { id: 'blogs', label: 'Réalisations', icon: Image },
+              { id: 'gallery', label: 'Galerie', icon: Grid3X3 }
             ].map((item) => (
               <button
                 key={item.id}
@@ -415,8 +484,8 @@ export default function AdminDashboard() {
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => handleDeleteService(product._id)}
-                            className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                            onClick={() => handleDeleteProduct(product._id)}
+                            className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -499,7 +568,7 @@ export default function AdminDashboard() {
                               </button>
                                 <button 
                                   onClick={() => handleDeleteProduct(product._id)}
-                                  className="text-red-600 hover:text-red-900 p-1"
+                                  className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-colors"
                                 >
                                 <Trash2 className="w-4 h-4" />
                               </button>
@@ -585,7 +654,7 @@ export default function AdminDashboard() {
                           </button>
                           <button
                             onClick={() => handleDeleteBlog(blog._id)}
-                            className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                            className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -663,7 +732,7 @@ export default function AdminDashboard() {
                               </button>
                                 <button 
                                   onClick={() => handleDeleteBlog(blog._id)}
-                                  className="text-red-600 hover:text-red-900 p-1"
+                                  className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-colors"
                                 >
                                 <Trash2 className="w-4 h-4" />
                               </button>
@@ -683,9 +752,127 @@ export default function AdminDashboard() {
                 </div>
               </div>
             </motion.div>
+          )}
+
+          {activeTab === 'gallery' && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-6"
+            >
+              <h2 className="text-2xl lg:text-3xl font-bold text-gray-900">Galerie d&apos;images</h2>
+              
+              {/* Images Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                {[...(products || []).flatMap(p => p.images), ...(blogs || []).flatMap(b => b.images)].map((imageUrl, index) => (
+                  <motion.div
+                    key={`${imageUrl}-${index}`}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="relative group cursor-pointer"
+                    onClick={() => setSelectedImage(imageUrl)}
+                  >
+                    <div className="aspect-square rounded-lg overflow-hidden bg-gray-100">
+                      <img
+                        src={imageUrl}
+                        alt={`Image ${index + 1}`}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
+                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 rounded-lg flex items-center justify-center">
+                      <Maximize2 className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+
+              {[...(products || []).flatMap(p => p.images), ...(blogs || []).flatMap(b => b.images)].length === 0 && (
+                <div className="text-center py-12">
+                  <Image className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500 text-lg">Aucune image trouvée</p>
+                  <p className="text-gray-400 text-sm">Ajoutez des images à vos services et réalisations</p>
+                </div>
+              )}
+            </motion.div>
           )} 
         </main>
       </div>
+
+      {/* Modal plein écran pour les images */}
+      {selectedImage && (
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center p-4">
+          <div className="relative max-w-7xl max-h-full">
+            <button
+              onClick={() => setSelectedImage(null)}
+              className="absolute top-4 right-4 z-10 p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-70 transition-colors"
+            >
+              <XIcon className="w-6 h-6" />
+            </button>
+            <img
+              src={selectedImage}
+              alt="Image en plein écran"
+              className="max-w-full max-h-full object-contain"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Modal de confirmation de suppression */}
+      {showDeleteModal && deleteItem && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex min-h-screen items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50"
+              onClick={() => setShowDeleteModal(false)}
+            />
+            
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative bg-white rounded-xl shadow-xl w-full max-w-md"
+            >
+              <div className="p-6">
+                <div className="flex items-center mb-4">
+                  <div className="flex-shrink-0 w-10 h-10 mx-auto flex items-center justify-center rounded-full bg-red-100">
+                    <Trash2 className="w-6 h-6 text-red-600" />
+                  </div>
+                </div>
+                
+                <div className="text-center">
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    Confirmer la suppression
+                  </h3>
+                  <p className="text-sm text-gray-500 mb-6">
+                    Êtes-vous sûr de vouloir supprimer <strong>&quot;{deleteItem.name}&quot;</strong> ?
+                    <br />
+                    Cette action est irréversible.
+                  </p>
+                  
+                  <div className="flex gap-3 justify-center">
+                    <button
+                      onClick={() => setShowDeleteModal(false)}
+                      className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      onClick={confirmDelete}
+                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                    >
+                      Supprimer
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      )}
 
       {/* Modals */}
       <ServiceModal
@@ -709,6 +896,11 @@ export default function AdminDashboard() {
         blog={editingBlog}
         title={editingBlog ? 'Modifier la réalisation' : 'Nouvelle réalisation'}
       />
+
+      {/* Toasts */}
+      {toasts.map((toast) => (
+        <Toast key={toast.id} {...toast} />
+      ))}
     </div>
   );
 }

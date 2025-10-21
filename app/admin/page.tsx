@@ -2,15 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { Lock, Eye, EyeOff, AlertCircle, Home, ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { authApi } from '../lib/api';
+import { useToast } from '../components/Toast';
+import Toast from '../components/Toast';
 
 export default function AdminPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const { toasts, success, error: showError } = useToast();
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -26,14 +29,23 @@ export default function AdminPage() {
         localStorage.setItem('adminToken', response.data.token);
         localStorage.setItem('adminTokenExpiry', new Date(Date.now() + 3600000).toISOString());
         
-        // Rediriger vers le dashboard admin
-        router.push('/admin/dashboard');
+        // Afficher toast de succès
+        success('Connexion réussie ! Redirection en cours...');
+        
+        // Rediriger vers le dashboard admin après un court délai
+        setTimeout(() => {
+          router.push('/admin/dashboard');
+        }, 1000);
       } else {
-        setError(response.message || 'Mot de passe incorrect');
+        const errorMessage = response.message || 'Mot de passe incorrect';
+        setError(errorMessage);
+        showError(errorMessage);
       }
     } catch (error) {
       console.error('Erreur de connexion:', error);
-      setError('Erreur de connexion. Veuillez réessayer.');
+      const errorMessage = 'Erreur de connexion. Veuillez réessayer.';
+      setError(errorMessage);
+      showError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -51,6 +63,17 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-violet-100 flex items-center justify-center p-4">
+      {/* Bouton retour */}
+      <div className="absolute top-4 left-4 z-10">
+        <button
+          onClick={() => router.push('/')}
+          className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-violet-600 bg-white/80 hover:bg-white rounded-lg shadow-sm transition-all duration-200 backdrop-blur-sm"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span className="text-sm font-medium">Retour à l&apos;accueil</span>
+        </button>
+      </div>
+
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
@@ -131,6 +154,11 @@ export default function AdminPage() {
           </div>
         </div>
       </motion.div>
+
+      {/* Toasts */}
+      {toasts.map((toast) => (
+        <Toast key={toast.id} {...toast} />
+      ))}
     </div>
   );
 }

@@ -31,6 +31,7 @@ export default function BlogModal({ isOpen, onClose, onSave, blog, title }: Blog
   const [tagInput, setTagInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({});
 
   useEffect(() => {
     if (blog) {
@@ -63,6 +64,7 @@ export default function BlogModal({ isOpen, onClose, onSave, blog, title }: Blog
       });
     }
     setError('');
+    setValidationErrors({});
   }, [blog, isOpen]);
 
   // Générer le slug automatiquement à partir du titre
@@ -78,14 +80,88 @@ export default function BlogModal({ isOpen, onClose, onSave, blog, title }: Blog
     }
   }, [formData.title, blog]);
 
+  const validateField = (field: string, value: string | number) => {
+    const errors: {[key: string]: string} = {};
+    
+    switch (field) {
+      case 'title':
+        if (!value || (typeof value === 'string' && value.trim().length < 5)) {
+          errors.title = 'Le titre doit contenir au moins 5 caractères';
+        }
+        break;
+      case 'excerpt':
+        if (!value || (typeof value === 'string' && value.trim().length < 50)) {
+          errors.excerpt = 'L\'extrait doit contenir au moins 50 caractères';
+        }
+        break;
+      case 'content':
+        if (!value || (typeof value === 'string' && value.trim().length < 100)) {
+          errors.content = 'Le contenu doit contenir au moins 100 caractères';
+        }
+        break;
+      case 'author':
+        if (!value || (typeof value === 'string' && value.trim().length < 2)) {
+          errors.author = 'L\'auteur doit contenir au moins 2 caractères';
+        }
+        break;
+      case 'eventDate':
+        if (value && typeof value === 'string' && value.trim() !== '') {
+          const selectedDate = new Date(value);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          if (selectedDate > today) {
+            errors.eventDate = 'La date de l\'événement ne peut pas être dans le futur';
+          }
+        }
+        break;
+    }
+    
+    setValidationErrors(prev => {
+      const newErrors = { ...prev };
+      // Effacer l'erreur si la condition est maintenant respectée
+      if (Object.keys(errors).length === 0) {
+        delete newErrors[field];
+      } else {
+        // Ajouter la nouvelle erreur
+        Object.assign(newErrors, errors);
+      }
+      return newErrors;
+    });
+    return Object.keys(errors).length === 0;
+  };
+
+  const validateForm = () => {
+    const errors: {[key: string]: string} = {};
+    
+    if (!formData.title || formData.title.trim().length < 5) {
+      errors.title = 'Le titre doit contenir au moins 5 caractères';
+    }
+    
+    if (!formData.excerpt || formData.excerpt.trim().length < 50) {
+      errors.excerpt = 'L\'extrait doit contenir au moins 50 caractères';
+    }
+    
+    if (!formData.content || formData.content.trim().length < 100) {
+      errors.content = 'Le contenu doit contenir au moins 100 caractères';
+    }
+    
+    if (!formData.meta.author || formData.meta.author.trim().length < 2) {
+      errors.author = 'L\'auteur doit contenir au moins 2 caractères';
+    }
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
+    setValidationErrors({});
 
     try {
-      if (!formData.title || !formData.excerpt || !formData.content || !formData.meta.author) {
-        setError('Veuillez remplir tous les champs obligatoires');
+      if (!validateForm()) {
+        setIsLoading(false);
         return;
       }
 
@@ -195,14 +271,26 @@ export default function BlogModal({ isOpen, onClose, onSave, blog, title }: Blog
                     <input
                       type="text"
                       value={formData.title}
-                      onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent placeholder-gray-400 text-gray-600"
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setFormData(prev => ({ ...prev, title: value }));
+                        validateField('title', value);
+                      }}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:border-transparent placeholder-gray-400 text-gray-600 ${
+                        validationErrors.title 
+                          ? 'border-red-500 focus:ring-red-500' 
+                          : 'border-gray-300 focus:ring-violet-500'
+                      }`}
                       placeholder="Ex: Mariage de Sophie & Marc"
                       required
                     />
-                    <p className="mt-1 text-xs text-gray-500">
-                      Minimum 5 caractères, maximum 100 caractères.
-                    </p>
+                    {validationErrors.title ? (
+                      <p className="mt-1 text-xs text-red-600">{validationErrors.title}</p>
+                    ) : (
+                      <p className="mt-1 text-xs text-gray-500">
+                        Minimum 5 caractères, maximum 100 caractères.
+                      </p>
+                    )}
                   </div>
 
                   {/* Slug */}
@@ -230,17 +318,29 @@ export default function BlogModal({ isOpen, onClose, onSave, blog, title }: Blog
                     <input
                       type="text"
                       value={formData.meta.author}
-                      onChange={(e) => setFormData(prev => ({ 
-                        ...prev, 
-                        meta: { ...prev.meta, author: e.target.value }
-                      }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent placeholder-gray-400 text-gray-600"
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setFormData(prev => ({ 
+                          ...prev, 
+                          meta: { ...prev.meta, author: value }
+                        }));
+                        validateField('author', value);
+                      }}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:border-transparent placeholder-gray-400 text-gray-600 ${
+                        validationErrors.author 
+                          ? 'border-red-500 focus:ring-red-500' 
+                          : 'border-gray-300 focus:ring-violet-500'
+                      }`}
                       placeholder="Votre nom"
                       required
                     />
-                    <p className="mt-1 text-xs text-gray-500">
-                      Nom de l&apos;auteur de cette réalisation (ex: Chef Marie, Monde Délice).
-                    </p>
+                    {validationErrors.author ? (
+                      <p className="mt-1 text-xs text-red-600">{validationErrors.author}</p>
+                    ) : (
+                      <p className="mt-1 text-xs text-gray-500">
+                        Nom de l&apos;auteur de cette réalisation (ex: Chef Marie, Monde Délice).
+                      </p>
+                    )}
                   </div>
 
                   {/* Date de l'événement */}
@@ -253,16 +353,28 @@ export default function BlogModal({ isOpen, onClose, onSave, blog, title }: Blog
                       <input
                         type="date"
                         value={formData.meta.eventDate}
-                        onChange={(e) => setFormData(prev => ({ 
-                          ...prev, 
-                          meta: { ...prev.meta, eventDate: e.target.value }
-                        }))}
-                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent placeholder-gray-400 text-gray-600"
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setFormData(prev => ({ 
+                            ...prev, 
+                            meta: { ...prev.meta, eventDate: value }
+                          }));
+                          validateField('eventDate', value);
+                        }}
+                        className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:border-transparent placeholder-gray-400 text-gray-600 ${
+                          validationErrors.eventDate 
+                            ? 'border-red-500 focus:ring-red-500' 
+                            : 'border-gray-300 focus:ring-violet-500'
+                        }`}
                       />
                     </div>
-                    <p className="mt-1 text-xs text-gray-500">
-                      Date de l&apos;événement à laquelle cette réalisation a été créée.
-                    </p>
+                    {validationErrors.eventDate ? (
+                      <p className="mt-1 text-xs text-red-600">{validationErrors.eventDate}</p>
+                    ) : (
+                      <p className="mt-1 text-xs text-gray-500">
+                        Date de l&apos;événement à laquelle cette réalisation a été créée.
+                      </p>
+                    )}
                   </div>
 
                   {/* En vedette */}
@@ -287,15 +399,27 @@ export default function BlogModal({ isOpen, onClose, onSave, blog, title }: Blog
                   </label>
                   <textarea
                     value={formData.excerpt}
-                    onChange={(e) => setFormData(prev => ({ ...prev, excerpt: e.target.value }))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setFormData(prev => ({ ...prev, excerpt: value }));
+                      validateField('excerpt', value);
+                    }}
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent placeholder-gray-400 text-gray-600"
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:border-transparent placeholder-gray-400 text-gray-600 ${
+                      validationErrors.excerpt 
+                        ? 'border-red-500 focus:ring-red-500' 
+                        : 'border-gray-300 focus:ring-violet-500'
+                    }`}
                     placeholder="Courte description qui apparaîtra dans la liste..."
                     required
                   />
-                  <p className="mt-1 text-xs text-gray-500">
-                    Résumé court (Minimum 50- Maximum 200 caractères).
-                  </p>
+                  {validationErrors.excerpt ? (
+                    <p className="mt-1 text-xs text-red-600">{validationErrors.excerpt}</p>
+                  ) : (
+                    <p className="mt-1 text-xs text-gray-500">
+                      Résumé court (Minimum 50- Maximum 200 caractères).
+                    </p>
+                  )}
                 </div>
 
                 {/* Contenu */}
@@ -305,15 +429,27 @@ export default function BlogModal({ isOpen, onClose, onSave, blog, title }: Blog
                   </label>
                   <textarea
                     value={formData.content}
-                    onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setFormData(prev => ({ ...prev, content: value }));
+                      validateField('content', value);
+                    }}
                     rows={8}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent placeholder-gray-400 text-gray-600"
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:border-transparent placeholder-gray-400 text-gray-600 ${
+                      validationErrors.content 
+                        ? 'border-red-500 focus:ring-red-500' 
+                        : 'border-gray-300 focus:ring-violet-500'
+                    }`}
                     placeholder="Décrivez en détail cette réalisation..."
                     required
                   />
-                  <p className="mt-1 text-xs text-gray-500">
-                    Description détaillée (minimum 100 caractères). Racontez l&apos;histoire, les défis, les techniques utilisées.
-                  </p>
+                  {validationErrors.content ? (
+                    <p className="mt-1 text-xs text-red-600">{validationErrors.content}</p>
+                  ) : (
+                    <p className="mt-1 text-xs text-gray-500">
+                      Description détaillée (minimum 100 caractères). Racontez l&apos;histoire, les défis, les techniques utilisées.
+                    </p>
+                  )}
                 </div>
 
                 {/* Tags */}
@@ -389,7 +525,7 @@ export default function BlogModal({ isOpen, onClose, onSave, blog, title }: Blog
                     {isLoading && (
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     )}
-                    {isLoading ? 'Sauvegarde...' : 'Sauvegarder'}
+                    {isLoading ? (blog ? 'Sauvegarde...' : 'Ajout...') : (blog ? 'Sauvegarder' : 'Ajouter')}
                   </button>
                 </div>
               </form>

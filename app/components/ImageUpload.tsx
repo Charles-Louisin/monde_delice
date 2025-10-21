@@ -111,10 +111,10 @@ export default function ImageUpload({
   };
 
   return (
-    <div className={`flex flex-col items-center gap-4 ${className}`}>
+    <div className={`flex flex-col gap-4 ${className}`}>
       <div className="text-center">
         <h3 className="text-lg font-semibold text-gray-900 mb-2">
-          Uploader une image
+          Images
         </h3>
         <p className="text-sm text-gray-600 mb-4">
           Formats acceptés : JPEG, PNG, WEBP, GIF (max 10MB)
@@ -127,24 +127,29 @@ export default function ImageUpload({
           onClientUploadComplete={handleUploadComplete}
           onUploadError={handleUploadError}
           onUploadBegin={handleUploadBegin}
-          disabled={disabled}
+          disabled={disabled || (onImagesChange && images.length >= maxImages)}
           appearance={{
             button: `
-              bg-blue-600 hover:bg-blue-700 
-              text-white font-medium py-2 px-4 
-              rounded-lg transition-colors duration-200
-              disabled:bg-gray-400 disabled:cursor-not-allowed
+              w-full bg-gradient-to-r from-violet-600 to-violet-700 
+              hover:from-violet-700 hover:to-violet-800 
+              text-white font-semibold py-3 px-6 
+              rounded-xl shadow-lg hover:shadow-xl
+              transition-all duration-300 ease-in-out
+              disabled:from-gray-400 disabled:to-gray-500 
+              disabled:cursor-not-allowed disabled:shadow-none
               ${isUploading ? 'opacity-50' : ''}
+              border border-violet-600/20
+              flex items-center justify-center gap-2
             `,
-            allowedContent: "text-xs text-gray-500 mt-2",
+            allowedContent: "text-xs text-gray-500 mt-2 text-center",
           }}
         />
         
         {isUploading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 rounded-lg">
-            <div className="flex items-center gap-2">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-              <span className="text-sm text-gray-600">Upload en cours...</span>
+          <div className="absolute inset-0 flex items-center justify-center bg-white/90 backdrop-blur-sm rounded-xl">
+            <div className="flex items-center gap-3">
+              <div className="animate-spin rounded-full h-5 w-5 border-2 border-violet-600 border-t-transparent"></div>
+              <span className="text-sm font-medium text-violet-700">Upload en cours...</span>
             </div>
           </div>
         )}

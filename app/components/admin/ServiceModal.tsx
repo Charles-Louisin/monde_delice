@@ -25,6 +25,7 @@ export default function ServiceModal({ isOpen, onClose, onSave, service, title }
   const [categoryInput, setCategoryInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({});
 
   useEffect(() => {
     if (service) {
@@ -45,16 +46,72 @@ export default function ServiceModal({ isOpen, onClose, onSave, service, title }
       });
     }
     setError('');
+    setValidationErrors({});
   }, [service, isOpen]);
+
+  const validateField = (field: string, value: string | number) => {
+    const errors: {[key: string]: string} = {};
+    
+    switch (field) {
+      case 'name':
+        if (!value || (typeof value === 'string' && value.trim().length < 3)) {
+          errors.name = 'Le nom doit contenir au moins 3 caractères';
+        }
+        break;
+      case 'description':
+        if (!value || (typeof value === 'string' && value.trim().length < 20)) {
+          errors.description = 'La description doit contenir au moins 20 caractères';
+        }
+        break;
+      case 'price':
+        if (typeof value === 'number' && value <= 0) {
+          errors.price = 'Le prix doit être supérieur à 0';
+        }
+        break;
+    }
+    
+    setValidationErrors(prev => {
+      const newErrors = { ...prev };
+      // Effacer l'erreur si la condition est maintenant respectée
+      if (Object.keys(errors).length === 0) {
+        delete newErrors[field];
+      } else {
+        // Ajouter la nouvelle erreur
+        Object.assign(newErrors, errors);
+      }
+      return newErrors;
+    });
+    return Object.keys(errors).length === 0;
+  };
+
+  const validateForm = () => {
+    const errors: {[key: string]: string} = {};
+    
+    if (!formData.name || formData.name.trim().length < 3) {
+      errors.name = 'Le nom doit contenir au moins 3 caractères';
+    }
+    
+    if (!formData.description || formData.description.trim().length < 20) {
+      errors.description = 'La description doit contenir au moins 20 caractères';
+    }
+    
+    if (formData.price <= 0) {
+      errors.price = 'Le prix doit être supérieur à 0';
+    }
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
+    setValidationErrors({});
 
     try {
-      if (!formData.name || !formData.description || formData.price <= 0) {
-        setError('Veuillez remplir tous les champs obligatoires');
+      if (!validateForm()) {
+        setIsLoading(false);
         return;
       }
 
@@ -141,14 +198,26 @@ export default function ServiceModal({ isOpen, onClose, onSave, service, title }
                   <input
                     type="text"
                     value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent placeholder-gray-400 text-gray-600"
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setFormData(prev => ({ ...prev, name: value }));
+                      validateField('name', value);
+                    }}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:border-transparent placeholder-gray-400 text-gray-600 ${
+                      validationErrors.name 
+                        ? 'border-red-500 focus:ring-red-500' 
+                        : 'border-gray-300 focus:ring-violet-500'
+                    }`}
                     placeholder="Ex: Gâteau d'anniversaire personnalisé"
                     required
                   />
-                  <p className="mt-1 text-xs text-gray-500">
-                    Minimum 3 caractères, maximum 100 caractères. Soyez descriptif et attractif.
-                  </p>
+                  {validationErrors.name ? (
+                    <p className="mt-1 text-xs text-red-600">{validationErrors.name}</p>
+                  ) : (
+                    <p className="mt-1 text-xs text-gray-500">
+                      Minimum 3 caractères, maximum 100 caractères. Soyez descriptif et attractif.
+                    </p>
+                  )}
                 </div>
 
                 {/* Prix */}
@@ -160,12 +229,24 @@ export default function ServiceModal({ isOpen, onClose, onSave, service, title }
                     type="number"
                     min="0"
                     step="0.01"
-                    value={formData.price}
-                    onChange={(e) => setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent placeholder-gray-400 text-gray-600"
-                    placeholder="0.00"
+                    value={formData.price === 0 ? '' : formData.price}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      const numValue = value === '' ? 0 : parseFloat(value);
+                      setFormData(prev => ({ ...prev, price: numValue }));
+                      validateField('price', numValue);
+                    }}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:border-transparent placeholder-gray-400 text-gray-600 ${
+                      validationErrors.price 
+                        ? 'border-red-500 focus:ring-red-500' 
+                        : 'border-gray-300 focus:ring-violet-500'
+                    }`}
+                    placeholder="Entrez le prix"
                     required
                   />
+                  {validationErrors.price && (
+                    <p className="mt-1 text-xs text-red-600">{validationErrors.price}</p>
+                  )}
                 </div>
 
                 {/* Description */}
@@ -175,15 +256,27 @@ export default function ServiceModal({ isOpen, onClose, onSave, service, title }
                   </label>
                   <textarea
                     value={formData.description}
-                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setFormData(prev => ({ ...prev, description: value }));
+                      validateField('description', value);
+                    }}
                     rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent placeholder-gray-400 text-gray-600"
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:border-transparent placeholder-gray-400 text-gray-600 ${
+                      validationErrors.description 
+                        ? 'border-red-500 focus:ring-red-500' 
+                        : 'border-gray-300 focus:ring-violet-500'
+                    }`}
                     placeholder="Décrivez votre service en détail..."
                     required
                   />
-                  <p className="mt-1 text-xs text-gray-500">
-                    Minimum 20 caractères, maximum 500 caractères. Décrivez les ingrédients, la taille, les options disponibles.
-                  </p>
+                  {validationErrors.description ? (
+                    <p className="mt-1 text-xs text-red-600">{validationErrors.description}</p>
+                  ) : (
+                    <p className="mt-1 text-xs text-gray-500">
+                      Minimum 20 caractères, maximum 500 caractères. Décrivez les ingrédients, la taille, les options disponibles.
+                    </p>
+                  )}
                 </div>
 
                 {/* Catégories */}
@@ -259,7 +352,7 @@ export default function ServiceModal({ isOpen, onClose, onSave, service, title }
                     {isLoading && (
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     )}
-                    {isLoading ? 'Sauvegarde...' : 'Sauvegarder'}
+                    {isLoading ? (service ? 'Sauvegarde...' : 'Ajout...') : (service ? 'Sauvegarder' : 'Ajouter')}
                   </button>
                 </div>
               </form>

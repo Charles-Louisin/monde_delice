@@ -22,7 +22,6 @@ const ProductSchema = new Schema<IProduct>({
     type: Number,
     required: [true, 'Le prix est requis'],
     min: [0, 'Le prix ne peut pas être négatif'],
-    max: [100000, 'Le prix ne peut pas dépasser 100000€'],
   },
   description: {
     type: String,
