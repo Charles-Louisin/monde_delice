@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import Blog from '@/lib/models/Blog';
 import Like from '@/lib/models/Like';
+import { MongoError } from 'mongodb';
 
 // POST /api/blogs/[id]/like - Ajouter un like
 export async function POST(
@@ -48,8 +49,9 @@ export async function POST(
       });
 
       await like.save();
-    } catch (duplicateError: any) {
+    } catch (error) {
       // Gérer l'erreur de clé dupliquée
+      const duplicateError = error as MongoError;
       if (duplicateError.code === 11000) {
         return NextResponse.json(
           { success: false, message: 'Vous avez déjà liké ce blog' },
