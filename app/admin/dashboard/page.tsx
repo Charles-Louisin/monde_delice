@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import { 
   BarChart3, 
-  Image, 
+  Image as ImageIcon, 
   FileText, 
   LogOut, 
   Plus,
@@ -254,7 +255,7 @@ export default function AdminDashboard() {
         {/* Overlay mobile */}
         {isMobileSidebarOpen && (
           <div 
-            className="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-sm z-40 lg:hidden"
+            className="fixed inset-0 bg-transparent backdrop-blur-sm z-40 lg:hidden"
             onClick={() => setIsMobileSidebarOpen(false)}
           />
         )}
@@ -271,7 +272,7 @@ export default function AdminDashboard() {
             {[
               { id: 'overview', label: 'Vue d\'ensemble', icon: BarChart3 },
               { id: 'products', label: 'Services', icon: FileText },
-              { id: 'blogs', label: 'Réalisations', icon: Image },
+              { id: 'blogs', label: 'Réalisations', icon: ImageIcon },
               { id: 'gallery', label: 'Galerie', icon: Grid3X3 }
             ].map((item) => (
               <button
@@ -316,13 +317,13 @@ export default function AdminDashboard() {
                   { 
                     label: 'Réalisations', 
                     value: statsLoading ? '...' : (stats?.totalBlogs || 0), 
-                    icon: Image, 
+                    icon: ImageIcon, 
                     color: 'bg-green-500' 
                   },
                   { 
                     label: 'Images', 
                     value: statsLoading ? '...' : (stats?.totalImages || 0), 
-                    icon: Image, 
+                    icon: ImageIcon, 
                     color: 'bg-purple-500' 
                   },
                   { 
@@ -774,13 +775,16 @@ export default function AdminDashboard() {
                     onClick={() => setSelectedImage(imageUrl)}
                   >
                     <div className="aspect-square rounded-lg overflow-hidden bg-gray-100">
-                      <img
+                      <Image
                         src={imageUrl}
                         alt={`Image ${index + 1}`}
+                        width={300}
+                        height={300}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        unoptimized
                       />
                     </div>
-                    <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 rounded-lg flex items-center justify-center">
+                    <div className="absolute inset-0 bg-transparent bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 rounded-lg flex items-center justify-center">
                       <Maximize2 className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     </div>
                   </motion.div>
@@ -789,7 +793,7 @@ export default function AdminDashboard() {
 
               {[...(products || []).flatMap(p => p.images), ...(blogs || []).flatMap(b => b.images)].length === 0 && (
                 <div className="text-center py-12">
-                  <Image className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <ImageIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                   <p className="text-gray-500 text-lg">Aucune image trouvée</p>
                   <p className="text-gray-400 text-sm">Ajoutez des images à vos services et réalisations</p>
                 </div>
@@ -801,18 +805,27 @@ export default function AdminDashboard() {
 
       {/* Modal plein écran pour les images */}
       {selectedImage && (
-        <div className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center p-4">
-          <div className="relative max-w-7xl max-h-full">
+        <div 
+          className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center p-4"
+          onClick={() => setSelectedImage(null)}
+        >
+          <div 
+            className="relative flex items-center justify-center max-w-4xl max-h-[80vh] w-full h-full"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
               onClick={() => setSelectedImage(null)}
               className="absolute top-4 right-4 z-10 p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-70 transition-colors"
             >
               <XIcon className="w-6 h-6" />
             </button>
-            <img
+            <Image
               src={selectedImage}
               alt="Image en plein écran"
-              className="max-w-full max-h-full object-contain"
+              width={1200}
+              height={800}
+              className="max-w-full max-h-full object-contain rounded-lg"
+              unoptimized
             />
           </div>
         </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useToast } from '../components/Toast';
 
 interface LikeData {
   liked: boolean;
@@ -19,6 +20,7 @@ const LIKED_BLOGS_KEY = 'monde-delice-liked-blogs';
 export const useLikes = (): UseLikesReturn => {
   const [likedBlogs, setLikedBlogs] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
+  const { success, error } = useToast();
 
   // Charger les likes depuis localStorage au montage
   useEffect(() => {
@@ -61,8 +63,16 @@ export const useLikes = (): UseLikesReturn => {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Erreur API like:', response.status, errorText);
+        const errorData = await response.json();
+        
+        // Si c'est une erreur 400 (déjà liké), afficher un toast d'info
+        if (response.status === 400) {
+          error(errorData.message || 'Vous avez déjà liké ce blog');
+          return null;
+        }
+        
+        // Pour les autres erreurs, afficher un toast d'erreur
+        error(errorData.message || 'Erreur lors du like');
         
         // Fallback: gérer le like localement si le backend n'est pas disponible
         console.warn('Backend non disponible, utilisation du mode local');
@@ -89,8 +99,10 @@ export const useLikes = (): UseLikesReturn => {
         
         if (data.data.liked) {
           newLikedBlogs.add(blogId);
+          success('Like ajouté avec succès ! ❤️');
         } else {
           newLikedBlogs.delete(blogId);
+          success('Like supprimé');
         }
         
         saveLikedBlogs(newLikedBlogs);
@@ -98,8 +110,11 @@ export const useLikes = (): UseLikesReturn => {
       }
       
       return null;
-    } catch (error) {
-      console.error('Erreur lors du like:', error);
+    } catch (err) {
+      console.error('Erreur lors du like:', err);
+      
+      // Afficher un toast d'erreur
+      error('Erreur de connexion. Mode local activé.');
       
       // Fallback: gérer le like localement si le backend n'est pas disponible
       console.warn('Erreur de connexion, utilisation du mode local');
@@ -108,8 +123,10 @@ export const useLikes = (): UseLikesReturn => {
       
       if (isCurrentlyLiked) {
         newLikedBlogs.delete(blogId);
+        success('Like supprimé (mode local)');
       } else {
         newLikedBlogs.add(blogId);
+        success('Like ajouté (mode local) ❤️');
       }
       
       saveLikedBlogs(newLikedBlogs);
@@ -144,8 +161,8 @@ export const useLikes = (): UseLikesReturn => {
       }
       
       return null;
-    } catch (error) {
-      console.warn('Erreur lors de la récupération du statut, utilisation du mode local:', error);
+    } catch (err) {
+      console.warn('Erreur lors de la récupération du statut, utilisation du mode local:', err);
       // Retourner le statut local au lieu de null
       return {
         liked: likedBlogs.has(blogId),

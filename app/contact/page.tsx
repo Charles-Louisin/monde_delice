@@ -1,14 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { MessageCircle, Mail, Send, MapPin, Phone, Clock } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { MessageCircle, Mail, Send, MapPin, Phone, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import ContactModal from '../components/ContactModal';
 
 export default function ContactPage() {
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
+  
+  const toggleFaq = (index: number) => {
+    setOpenFaqIndex(openFaqIndex === index ? null : index);
+  };
 
   const contactMethods = [
     {
@@ -179,7 +184,7 @@ export default function ContactPage() {
             </p>
           </motion.div>
 
-          <div className="max-w-3xl mx-auto space-y-6">
+          <div className="max-w-3xl mx-auto space-y-4">
             {[
               {
                 question: "Combien de temps à l'avance dois-je commander ?",
@@ -204,10 +209,48 @@ export default function ContactPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
-                className="bg-white p-6 rounded-2xl shadow-lg"
+                className="bg-white rounded-2xl shadow-lg overflow-hidden"
               >
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">{faq.question}</h3>
-                <p className="text-gray-600">{faq.answer}</p>
+                <button
+                  onClick={() => toggleFaq(index)}
+                  className={`w-full p-6 flex justify-between items-center text-left transition-colors duration-300 ${openFaqIndex === index ? 'bg-violet-50' : 'hover:bg-gray-50'}`}
+                >
+                  <h3 className="text-lg font-semibold text-gray-900">{faq.question}</h3>
+                  {openFaqIndex === index ? (
+                    <ChevronUp className="w-5 h-5 text-violet-600 flex-shrink-0" />
+                  ) : (
+                    <ChevronDown className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                  )}
+                </button>
+                
+                <AnimatePresence>
+                  {openFaqIndex === index && (
+                    <motion.div 
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ 
+                        height: 'auto', 
+                        opacity: 1,
+                        transition: {
+                          height: { duration: 0.3, ease: 'easeOut' },
+                          opacity: { duration: 0.3, delay: 0.1 }
+                        }
+                      }}
+                      exit={{ 
+                        height: 0, 
+                        opacity: 0,
+                        transition: {
+                          height: { duration: 0.3, ease: 'easeIn' },
+                          opacity: { duration: 0.2 }
+                        }
+                      }}
+                      className="overflow-hidden"
+                    >
+                      <div className="p-6 pt-0 border-t border-gray-100">
+                        <p className="text-gray-600">{faq.answer}</p>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             ))}
           </div>

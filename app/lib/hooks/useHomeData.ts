@@ -16,7 +16,7 @@ export function useFeaturedServices() {
         setError(null);
         const response = await productApi.getAll(); // Récupérer tous les services
         if (response.success && response.data) {
-          setServices(response.data.slice(0, 6)); // Limiter à 6 pour l'affichage
+          setServices(response.data.slice(0, 3)); // Limiter à 3 pour l'affichage
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Erreur lors du chargement des services');
@@ -44,7 +44,7 @@ export function useFeaturedBlogs() {
         setError(null);
         const response = await blogApi.getAll('', true); // Récupérer les blogs mis en vedette
         if (response.success && response.data) {
-          setBlogs(response.data.slice(0, 6)); // Limiter à 6 pour l'affichage
+          setBlogs(response.data.slice(0, 3)); // Limiter à 3 pour l'affichage
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Erreur lors du chargement des réalisations');

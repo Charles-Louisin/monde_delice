@@ -259,7 +259,7 @@ export default function BlogsPage() {
                             });
                             setIsContactModalOpen(true);
                           }}
-                          className="text-violet-600 hover:text-violet-700 font-semibold text-sm"
+                          className="bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded-lg transition-colors font-semibold text-sm"
                         >
                           Me contacter
                         </button>

@@ -297,31 +297,31 @@ export default function Home() {
                     <p className="text-gray-600 mb-4 line-clamp-2">
                       {blog.excerpt}
                     </p>
-                    <div className="flex items-center justify-between text-sm text-gray-500">
-                      <span>{new Date(blog.createdAt).toLocaleDateString('fr-FR')}</span>
-                      <div className="flex items-center space-x-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3 text-sm text-gray-500">
+                        <span>{new Date(blog.createdAt).toLocaleDateString('fr-FR')}</span>
                         <LikeButton 
                           blogId={blog._id} 
                           initialLikes={blog.likes}
                           size="sm"
                         />
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setSelectedBlog({
-                              type: 'blog',
-                              name: blog.title,
-                              description: blog.excerpt,
-                              slug: blog.slug,
-                              image: blog.images?.[0]
-                            });
-                            setIsContactModalOpen(true);
-                          }}
-                          className="text-violet-600 hover:text-violet-700 font-semibold"
-                        >
-                          Me contacter
-                        </button>
                       </div>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setSelectedBlog({
+                            type: 'blog',
+                            name: blog.title,
+                            description: blog.excerpt,
+                            slug: blog.slug,
+                            image: blog.images?.[0]
+                          });
+                          setIsContactModalOpen(true);
+                        }}
+                        className="bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded-lg transition-colors font-semibold"
+                      >
+                        Me contacter
+                      </button>
                     </div>
                   </div>
                 </motion.div>

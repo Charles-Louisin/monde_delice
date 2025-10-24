@@ -7,7 +7,7 @@ import { z } from 'zod';
 // Schéma de validation pour la mise à jour de produit
 const updateProductSchema = z.object({
   name: z.string().min(2).max(100).optional(),
-  price: z.number().min(0).max(10000).optional(),
+  price: z.number().min(0).optional(),
   description: z.string().min(10).max(1000).optional(),
   images: z.array(z.string().url()).optional(),
   categories: z.array(z.string()).optional()

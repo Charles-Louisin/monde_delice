@@ -2,12 +2,11 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Filter, Star } from 'lucide-react';
+import { Search, Filter, Star, X, Maximize2, ChevronLeft, ChevronRight } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import ContactModal from '../components/ContactModal';
 import { useProducts } from '../lib/hooks/useAdminData';
-import Image from 'next/image';
 import OptimizedImage from '@/components/OptimizedImage';
 
 export default function ServicesPage() {
@@ -21,6 +20,9 @@ export default function ServicesPage() {
   } | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [currentServiceImages, setCurrentServiceImages] = useState<string[]>([]);
   const { 
     products: services, 
     loading, 
@@ -128,15 +130,33 @@ export default function ServicesPage() {
                 >
                   <div className="relative h-48 bg-gradient-to-br from-violet-100 to-violet-200 flex items-center justify-center">
                       {service.images && service.images.length > 0 ? (
-                        <OptimizedImage
-                          src={service.images[0]}
-                          alt={service.name}
-                          fill
-                          priority={index < 3}
-                          className="object-cover"
-                        />
+                        <div 
+                          className="w-full h-full cursor-pointer group" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedImage(service.images[0]);
+                            setCurrentImageIndex(0);
+                            setCurrentServiceImages(service.images);
+                          }}
+                        >
+                          <OptimizedImage
+                            src={service.images[0]}
+                            alt={service.name}
+                            fill
+                            priority={index < 3}
+                            className="object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                          <div className="absolute inset-0 bg-transparent bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+                            <Maximize2 className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                          </div>
+                          {service.images.length > 1 && (
+                            <div className="absolute bottom-2 right-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded-full">
+                              +{service.images.length - 1}
+                            </div>
+                          )}
+                        </div>
                       ) : (
-                    <div className="text-6xl">🎂</div>
+                        <div className="text-6xl">🎂</div>
                       )}
                       {service.categories && service.categories.includes('Populaire') && (
                         <div className="absolute top-4 right-4 bg-violet-600 text-white px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
@@ -234,6 +254,69 @@ export default function ServicesPage() {
         }}
         productInfo={selectedService || undefined}
       />
+      
+      {/* Modal plein écran pour les images */}
+      {selectedImage && (
+        <div 
+          className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center p-4"
+          onClick={() => setSelectedImage(null)}
+        >
+          <div 
+            className="relative flex items-center justify-center max-w-4xl max-h-[80vh] w-full h-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setSelectedImage(null)}
+              className="absolute top-4 right-4 z-10 p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-70 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            
+            {currentServiceImages.length > 1 && (
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const newIndex = currentImageIndex === 0 ? currentServiceImages.length - 1 : currentImageIndex - 1;
+                    setCurrentImageIndex(newIndex);
+                    setSelectedImage(currentServiceImages[newIndex]);
+                  }}
+                  className="absolute left-4 z-10 p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-70 transition-colors"
+                  aria-label="Image précédente"
+                >
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const newIndex = currentImageIndex === currentServiceImages.length - 1 ? 0 : currentImageIndex + 1;
+                    setCurrentImageIndex(newIndex);
+                    setSelectedImage(currentServiceImages[newIndex]);
+                  }}
+                  className="absolute right-4 z-10 p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-70 transition-colors"
+                  aria-label="Image suivante"
+                >
+                  <ChevronRight className="w-6 h-6" />
+                </button>
+                <div className="absolute bottom-4 right-4 bg-black bg-opacity-50 px-3 py-1 rounded-full text-sm text-white">
+                  {currentImageIndex + 1} / {currentServiceImages.length}
+                </div>
+              </>
+            )}
+            
+            <div className="w-full h-full flex items-center justify-center">
+              <OptimizedImage
+                src={selectedImage}
+                alt="Image en plein écran"
+                width={1200}
+                height={800}
+                className="max-h-full w-auto object-contain"
+                priority
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

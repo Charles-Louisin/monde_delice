@@ -7,7 +7,7 @@ import { z } from 'zod';
 // Schéma de validation pour la création de produit
 const createProductSchema = z.object({
   name: z.string().min(2).max(100),
-  price: z.number().min(0).max(100000),
+  price: z.number().min(0),
   description: z.string().min(1).max(1000),
   images: z.array(z.string().url()).min(1),
   categories: z.array(z.string()).min(1)

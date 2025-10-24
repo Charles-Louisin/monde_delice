@@ -3,6 +3,7 @@
 import { UploadButton } from "@uploadthing/react";
 import { ourFileRouter, type OurFileRouter } from "@/lib/uploadthing";
 import { useState } from "react";
+import { Upload } from "lucide-react";
 import OptimizedImage from "./OptimizedImage";
 
 type ImageUploadProps = {
@@ -122,28 +123,33 @@ export default function ImageUpload({
       </div>
 
       <div className="relative">
-        <UploadButton<OurFileRouter, "imageUploader">
-          endpoint="imageUploader"
-          onClientUploadComplete={handleUploadComplete}
-          onUploadError={handleUploadError}
-          onUploadBegin={handleUploadBegin}
-          disabled={disabled || (onImagesChange && images.length >= maxImages)}
-          appearance={{
-            button: `
-              w-full bg-gradient-to-r from-violet-600 to-violet-700 
-              hover:from-violet-700 hover:to-violet-800 
-              text-white font-semibold py-3 px-6 
-              rounded-xl shadow-lg hover:shadow-xl
-              transition-all duration-300 ease-in-out
-              disabled:from-gray-400 disabled:to-gray-500 
-              disabled:cursor-not-allowed disabled:shadow-none
-              ${isUploading ? 'opacity-50' : ''}
-              border border-violet-600/20
-              flex items-center justify-center gap-2
-            `,
-            allowedContent: "text-xs text-gray-500 mt-2 text-center",
-          }}
-        />
+        <div className="relative w-[100%] h-12 items-center justify-center flex">
+          <UploadButton<OurFileRouter, "imageUploader">
+            endpoint="imageUploader"
+            onClientUploadComplete={handleUploadComplete}
+            onUploadError={handleUploadError}
+            onUploadBegin={handleUploadBegin}
+            disabled={disabled || (onImagesChange && images.length >= maxImages)}
+            appearance={{
+              button: `
+                absolute inset-0 w-20 h-16 cursor-pointer
+                bg-violet-600 hover:bg-violet-700 
+                text-white rounded-lg shadow-md hover:shadow-lg
+                transition-all duration-200 ease-in-out
+                disabled:bg-gray-400 disabled:cursor-not-allowed 
+                disabled:shadow-none disabled:hover:bg-gray-400
+                ${isUploading ? 'opacity-50' : ''}
+                border border-violet-600/20
+                flex items-center justify-center
+                opacity-0
+              `,
+              allowedContent: "hidden",
+            }}
+          />
+          <div className="absolute inset-0 text-lg font-semibold text-gray-600 flex items-center justify-center pointer-events-none">
+            <Upload className="w-20 h-16 text-violet-600 cursor-pointer" />
+          </div>
+        </div>
         
         {isUploading && (
           <div className="absolute inset-0 flex items-center justify-center bg-white/90 backdrop-blur-sm rounded-xl">

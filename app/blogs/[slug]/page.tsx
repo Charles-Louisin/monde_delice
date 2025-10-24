@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, User, ArrowLeft, Star } from 'lucide-react';
+import { Calendar, User, ArrowLeft, Star, X, Maximize2 } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import Header from '../../components/Header';
@@ -25,6 +25,7 @@ export default function BlogDetailPage() {
     slug: string;
     image?: string;
   } | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const params = useParams();
 
   useEffect(() => {
@@ -198,7 +199,16 @@ export default function BlogDetailPage() {
                 size="lg"
               />
               <button
-                onClick={() => setIsContactModalOpen(true)}
+                onClick={() => {
+                  setSelectedBlog({
+                    type: 'blog',
+                    name: blog.title,
+                    description: blog.excerpt,
+                    slug: blog.slug,
+                    image: blog.images?.[0]
+                  });
+                  setIsContactModalOpen(true);
+                }}
                 className="bg-violet-600 hover:bg-violet-700 text-white px-6 py-2 rounded-lg transition-colors"
               >
                 Me contacter
@@ -218,14 +228,20 @@ export default function BlogDetailPage() {
               transition={{ delay: 0.2 }}
               className="max-w-5xl mx-auto"
             >
-              <div className="relative h-96 md:h-[500px] rounded-2xl overflow-hidden">
+              <div 
+                className="relative h-96 md:h-[500px] rounded-2xl overflow-hidden cursor-pointer group"
+                onClick={() => setSelectedImage(blog.images[0])}
+              >
                 <Image
                   src={blog.images[0]}
                   alt={blog.title}
                   fill
                   priority
-                  className="object-cover"
+                  className="object-cover group-hover:scale-105 transition-transform duration-300"
                 />
+                <div className="absolute inset-0 bg-transparent bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 rounded-2xl flex items-center justify-center">
+                  <Maximize2 className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                </div>
               </div>
             </motion.div>
           </div>
@@ -268,6 +284,7 @@ export default function BlogDetailPage() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.4 + index * 0.1 }}
                       className="relative h-48 rounded-lg overflow-hidden group cursor-pointer"
+                      onClick={() => setSelectedImage(image)}
                     >
                       <OptimizedImage
                         src={image}
@@ -276,6 +293,9 @@ export default function BlogDetailPage() {
                         className="object-cover group-hover:scale-105 transition-transform duration-300"
                         sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                       />
+                      <div className="absolute inset-0 bg-transparent bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 rounded-lg flex items-center justify-center">
+                        <Maximize2 className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      </div>
                     </motion.div>
                   ))}
                 </div>
@@ -331,6 +351,31 @@ export default function BlogDetailPage() {
         }}
         productInfo={selectedBlog || undefined}
       />
+
+      {/* Modal plein écran pour les images */}
+      {selectedImage && (
+        <div 
+          className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center p-4"
+          onClick={() => setSelectedImage(null)}
+        >
+          <div 
+            className="relative flex items-center justify-center max-w-4xl max-h-[80vh] w-full h-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setSelectedImage(null)}
+              className="absolute top-4 right-4 z-10 p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-70 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            <img
+              src={selectedImage}
+              alt="Image en plein écran"
+              className="max-w-full max-h-full object-contain rounded-lg"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

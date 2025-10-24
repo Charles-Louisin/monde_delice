@@ -63,16 +63,7 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-violet-50 via-white to-violet-100 flex items-center justify-center p-4">
-      {/* Bouton retour */}
-      <div className="absolute top-4 left-4 z-10">
-        <button
-          onClick={() => router.push('/')}
-          className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-violet-600 bg-white/80 hover:bg-white rounded-lg shadow-sm transition-all duration-200 backdrop-blur-sm"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span className="text-sm font-medium">Retour à l&apos;accueil</span>
-        </button>
-      </div>
+      
 
       <motion.div
         initial={{ opacity: 0, y: 30 }}
@@ -80,6 +71,17 @@ export default function AdminPage() {
         className="w-full max-w-md"
       >
         <div className="bg-white rounded-2xl shadow-2xl p-8">
+          {/* Bouton de retour */}
+          <div className="flex justify-start mb-6">
+            <button
+              onClick={() => router.push('/')}
+              className="flex items-center gap-2 text-gray-500 hover:text-gray-700 transition-colors text-sm cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Retour à l&apos;accueil
+            </button>
+          </div>
+
           {/* Header */}
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-violet-100 rounded-full mb-4">
